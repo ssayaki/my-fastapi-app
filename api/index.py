@@ -2,6 +2,8 @@ from fastapi import FastAPI, Request
 import requests
 from bs4 import BeautifulSoup
 import re
+import os
+api_key = os.getenv("SERPAPI_KEY")
 
 app = FastAPI()
 
