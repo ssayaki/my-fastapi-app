@@ -3,7 +3,6 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import os
-api_key = os.getenv("SERPAPI_KEY")
 
 app = FastAPI()
 
@@ -15,7 +14,7 @@ async def get_info(data: Request):
     email = body["email"]
 
     # SerpAPIでURL取得
-    api_key = "YOUR_SERPAPI_KEY"
+    api_key = os.getenv("SERPAPI_KEY")
     query = f"{company_name} {phone_number} {email}".strip()
     serp = requests.get("https://serpapi.com/search.json", params={
         "q": query, "hl": "ja", "api_key": api_key
