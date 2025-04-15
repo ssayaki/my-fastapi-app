@@ -12,16 +12,18 @@ SERP_API_KEY = os.getenv("SERPAPI_KEY")
 
 
 @app.post("/")
-async def get_info(data: Request):
-    body = await data.json()
-    company_name = body["company_name"]
-    phone_number = body["phone_number"]
-    email = body["email"]
-
+async def get_info_with_file(
+    company_name: str = Form(...),
+    phone_number: str = Form(...),
+    email: str = Form(...),
+    file: UploadFile = File(...)
+):
+    # SerpAPIでURL取得
+    query = f"{company_name} {phone_number} {email}".strip()
     serp = requests.get("https://serpapi.com/search.json", params={
-        "q": f"{company_name} {phone_number} {email}",
+        "q": query,
         "hl": "ja",
-        "api_key": SERP_API_KEY,
+        "api_key": SERP_API_KEY
     }).json()
 
     url, address_text, snippet_text, info = "", "", "", ""
@@ -52,13 +54,12 @@ async def get_info(data: Request):
                 prefecture = match.group(1)
                 break
 
-    # ✅ Dify Workflow に送信（後続処理はDify側で行う）
-    headers = {
-        "Authorization": f"Bearer {DIFY_API_KEY}",
-        "Content-Type": "application/json"
+    # Difyにmultipart/form-dataで送信
+    files = {
+        "file": (file.filename, await file.read(), file.content_type)
     }
 
-    payload = {
+    data = {
         "inputs": {
             "url": url,
             "prefecture": prefecture,
@@ -68,10 +69,15 @@ async def get_info(data: Request):
         "user": "auto"
     }
 
-    # POST送信（結果は特に使用しない）
-    try:
-        requests.post(DIFY_API_URL, headers=headers, json=payload)
-    except Exception as e:
-        pass  # エラー無視（必要ならログ出力可）
+    headers = {
+        "Authorization": f"Bearer {DIFY_API_KEY}"
+    }
 
-    return {"status": "sent to dify"}
+    response = requests.post(
+        DIFY_API_URL,
+        headers=headers,
+        data={"inputs": str(data["inputs"]), "response_mode": "blocking", "user": "auto"},
+        files=files
+    )
+
+    return {"status": "sent to dify", "dify_status_code": response.status_code}
