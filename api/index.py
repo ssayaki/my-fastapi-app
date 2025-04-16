@@ -48,7 +48,6 @@ async def handle_batch_request(payload: RequestPayload):
 
         # Step 1: SerpApiで企業URLを取得
         query = f"{company_name} {phone_number} {email}".strip()
-        logging.info(f"[STEP 1] Query: {query}")
 
         serp = requests.get("https://serpapi.com/search.json", params={
             "q": query,
@@ -66,7 +65,7 @@ async def handle_batch_request(payload: RequestPayload):
             url = serp["organic_results"][0].get("link", "")
 
         if "knowledge_graph" in serp:
-            address_text = serp["knowledge_graph"].get("address", "")
+            address_text = serp["knowledge_graph"].get("address", "") # 所在地も追加
         if "organic_results" in serp and len(serp["organic_results"]) > 0:
             snippet_text = serp["organic_results"][0].get("snippet", "")
             info = snippet_text
@@ -77,7 +76,7 @@ async def handle_batch_request(payload: RequestPayload):
         prefecture = ""
         try:
             res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
-            soup = BeautifulSoup(res.text, "html.parser")
+            soup = BeautifulSoup(res.text, "html.parser") # これを出力してaddress取得できないか確認。
             text = soup.get_text()
             match = re.search(r"(東京都|北海道|(?:京都|大阪)府|.{2,3}県)", text)
             if match:
@@ -91,7 +90,8 @@ async def handle_batch_request(payload: RequestPayload):
                     break
 
         logging.info(f"[STEP 2] Extracted prefecture for '{company_name}': {prefecture}")
-
+        # append直前ログ
+        logging.info("[DEBUG] appendするデータ: company=%s, url=%s", company_name, url)
         enriched_items.append({
             "company_name": company_name,
             "email": email,
