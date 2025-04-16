@@ -5,6 +5,11 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import os
+import logging
+
+# ログの設定
+logging.basicConfig(level=logging.INFO)
+
 
 app = FastAPI()
 
@@ -79,6 +84,9 @@ async def handle_batch_request(payload: RequestPayload):
             "info": info
         })
 
+    # enriched_itemsをログに出力
+    logging.info("Enriched Items: %s", enriched_items)
+
     # Step 3: Difyへ一括送信
     dify_payload = {
         "inputs": {
@@ -103,6 +111,9 @@ async def handle_batch_request(payload: RequestPayload):
         predictions = dify_result.get("results", [])
     except Exception:
         predictions = []
+
+    # predictionsをログに出力
+    logging.info("Predictions: %s", predictions)
 
     # Step 4: 結果を統合
     results = []
