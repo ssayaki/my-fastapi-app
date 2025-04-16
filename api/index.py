@@ -107,7 +107,7 @@ async def handle_batch_request(payload: RequestPayload):
     # Step 4: 結果を統合
     results = []
     for item in enriched_items:
-        matched = next((p["matched_industry"] for p in predictions if p["company_name"] == item["company_name"]), "")
+        matched = next((p["industry"] for p in predictions if p["company_name"] == item["company_name"]), "")
         results.append({
             "company_name": item["company_name"],
             "email": item["email"],
