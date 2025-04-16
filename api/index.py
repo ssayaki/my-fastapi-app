@@ -90,8 +90,7 @@ async def handle_batch_request(payload: RequestPayload):
                     break
 
         logging.info(f"[STEP 2] Extracted prefecture for '{company_name}': {prefecture}")
-        # append直前ログ
-        logging.info("[DEBUG] appendするデータ: company=%s, url=%s", company_name, url)
+
         enriched_items.append({
             "company_name": company_name,
             "email": email,
@@ -100,7 +99,7 @@ async def handle_batch_request(payload: RequestPayload):
             "info": info
         })
 
-    logging.info("[STEP 3] Enriched Items: %s", enriched_items)
+    logging.info(f"[STEP 3] Enriched Items: {enriched_items}")
 
 
     # Step 3: Difyへ一括送信
@@ -125,13 +124,16 @@ async def handle_batch_request(payload: RequestPayload):
         dify_response = requests.post(DIFY_API_URL, headers=headers, json=dify_payload)
         dify_result = dify_response.json()
         predictions = dify_result.get("results", [])
+        logging.info("[DIFY RAW RESPONSE]: %s", dify_result)
+        logging.info(f"[DIFY RAW RESPONSE]: {dify_result}")
+
     except Exception:
         predictions = []
 
     # Step 4: 結果を統合
     results = []
     for item in enriched_items:
-        matched = next((p["matched_industry"] for p in predictions if p["company_name"] == item["company_name"]), "")
+        matched = next((p["industry"] for p in predictions if p["company_name"] == item["company_name"]), "")
         results.append({
             "company_name": item["company_name"],
             "email": item["email"],
