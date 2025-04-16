@@ -79,6 +79,8 @@ async def handle_batch_request(payload: RequestPayload):
             "info": info
         })
 
+    print(enriched_items);
+
     # Step 3: Difyへ一括送信
     dify_payload = {
         "inputs": {
