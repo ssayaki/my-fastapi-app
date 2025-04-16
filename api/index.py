@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 app = FastAPI()
 
 # Dify Workflow API設定
-DIFY_API_URL = "https://api.dify.ai/v1/workflows/run"
+DIFY_API_URL = "https://api.dify.ai/v1/workflows/YOUR_WORKFLOW_ID/execute"
 DIFY_API_KEY = os.getenv("DIFY_API_KEY")
 
 # SerpApi APIキー
@@ -48,11 +48,15 @@ async def handle_batch_request(payload: RequestPayload):
 
         # Step 1: SerpApiで企業URLを取得
         query = f"{company_name} {phone_number} {email}".strip()
+        logging.info(f"[STEP 1] Query: {query}")
+
         serp = requests.get("https://serpapi.com/search.json", params={
             "q": query,
             "hl": "ja",
             "api_key": SERP_API_KEY
         }).json()
+
+        logging.info(f"[STEP 1] SerpAPI response for '{company_name}': {serp}")
 
         url, address_text, snippet_text, info = "", "", "", ""
 
@@ -67,6 +71,8 @@ async def handle_batch_request(payload: RequestPayload):
             snippet_text = serp["organic_results"][0].get("snippet", "")
             info = snippet_text
 
+        logging.info(f"[STEP 1] URL: {url}, Address: {address_text}, Snippet: {snippet_text}")
+
         # Step 2: ホームページから都道府県を取得
         prefecture = ""
         try:
@@ -76,14 +82,16 @@ async def handle_batch_request(payload: RequestPayload):
             match = re.search(r"(東京都|北海道|(?:京都|大阪)府|.{2,3}県)", text)
             if match:
                 prefecture = match.group(1)
-        except:
+        except Exception as e:
+            logging.warning(f"[STEP 2] Failed to fetch from URL: {url}, trying fallback. Error: {e}")
             for source in [address_text, snippet_text]:
                 match = re.search(r"(東京都|北海道|(?:京都|大阪)府|.{2,3}県)", source)
                 if match:
                     prefecture = match.group(1)
                     break
 
-        # enriched itemにまとめておく
+        logging.info(f"[STEP 2] Extracted prefecture for '{company_name}': {prefecture}")
+
         enriched_items.append({
             "company_name": company_name,
             "email": email,
@@ -92,8 +100,8 @@ async def handle_batch_request(payload: RequestPayload):
             "info": info
         })
 
-    # enriched_itemsをログに出力
-    logging.info("Enriched Items: %s", enriched_items)
+    logging.info("[STEP 3] Enriched Items: %s", enriched_items)
+
 
     # Step 3: Difyへ一括送信
     dify_payload = {
@@ -120,13 +128,10 @@ async def handle_batch_request(payload: RequestPayload):
     except Exception:
         predictions = []
 
-    # predictionsをログに出力
-    logging.info("Predictions: %s", predictions)
-
     # Step 4: 結果を統合
     results = []
     for item in enriched_items:
-        matched = next((p["industry"] for p in predictions if p["company_name"] == item["company_name"]), "")
+        matched = next((p["matched_industry"] for p in predictions if p["company_name"] == item["company_name"]), "")
         results.append({
             "company_name": item["company_name"],
             "email": item["email"],
