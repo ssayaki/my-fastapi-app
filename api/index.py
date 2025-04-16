@@ -8,14 +8,6 @@ import os
 import logging
 from fastapi import Response
 
-# エラーログを残さない
-@app.get("/")
-def root():
-    return {"message": "POSTリクエストでデータを送信してください。"}
-@app.get("/favicon.ico")
-def favicon():
-    return Response(content="", media_type="image/x-icon")
-
 # ログの設定
 logging.basicConfig(level=logging.INFO)
 
@@ -36,6 +28,14 @@ class CompanyItem(BaseModel):
 class RequestPayload(BaseModel):
     items: List[CompanyItem]
     industry_texts: str
+
+# エラーログを残さない
+@app.get("/")
+def root():
+    return {"message": "POSTリクエストでデータを送信してください。"}
+@app.get("/favicon.ico")
+def favicon():
+    return Response(content="", media_type="image/x-icon")
 
 @app.post("/")
 async def handle_batch_request(payload: RequestPayload):
