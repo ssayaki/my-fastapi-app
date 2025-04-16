@@ -9,7 +9,7 @@ import os
 app = FastAPI()
 
 # Dify Workflow API設定
-DIFY_API_URL = "https://api.dify.ai/v1/workflows/YOUR_WORKFLOW_ID/execute"
+DIFY_API_URL = "https://api.dify.ai/v1/workflows/run"
 DIFY_API_KEY = os.getenv("DIFY_API_KEY")
 
 # SerpApi APIキー
