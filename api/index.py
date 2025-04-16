@@ -6,10 +6,18 @@ from bs4 import BeautifulSoup
 import re
 import os
 import logging
+from fastapi import Response
+
+# エラーログを残さない
+@app.get("/")
+def root():
+    return {"message": "POSTリクエストでデータを送信してください。"}
+@app.get("/favicon.ico")
+def favicon():
+    return Response(content="", media_type="image/x-icon")
 
 # ログの設定
 logging.basicConfig(level=logging.INFO)
-
 
 app = FastAPI()
 
