@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from typing import List
 import requests
@@ -26,7 +26,7 @@ class RequestPayload(BaseModel):
 
 @app.post("/")
 async def handle_batch_request(payload: RequestPayload):
-    enriched_items = []
+    results = []
 
     for item in payload.items:
         company_name = item.company_name
@@ -70,50 +70,35 @@ async def handle_batch_request(payload: RequestPayload):
                     prefecture = match.group(1)
                     break
 
-        # enriched itemにまとめておく
-        enriched_items.append({
+        # Step 3: Difyへ送信（業種分類）
+        headers = {
+            "Authorization": f"Bearer {DIFY_API_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        dify_payload = {
+            "inputs": {
+                "info": info,
+                "file": payload.industry_texts
+            },
+            "response_mode": "streaming",
+            "user": "company-fetcher"
+        }
+
+        try:
+            dify_response = requests.post(DIFY_API_URL, headers=headers, json=dify_payload)
+            dify_result = dify_response.json()
+            predicted_industry = dify_result.get("industry", "")
+        except Exception as e:
+            predicted_industry = ""
+
+        # 結果を追加
+        results.append({
             "company_name": company_name,
             "email": email,
             "url": url,
             "prefecture": prefecture,
-            "info": info
-        })
-
-    # Step 3: Difyへ一括送信
-    dify_payload = {
-        "inputs": {
-            "industry_texts": payload.industry_texts,
-            "info_list": [
-                {"company_name": item["company_name"], "info": item["info"]}
-                for item in enriched_items
-            ]
-        },
-        "response_mode": "blocking",
-        "user": "company-fetcher"
-    }
-
-    headers = {
-        "Authorization": f"Bearer {DIFY_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    try:
-        dify_response = requests.post(DIFY_API_URL, headers=headers, json=dify_payload)
-        dify_result = dify_response.json()
-        predictions = dify_result.get("results", [])
-    except Exception:
-        predictions = []
-
-    # Step 4: 結果を統合
-    results = []
-    for item in enriched_items:
-        matched = next((p["matched_industry"] for p in predictions if p["company_name"] == item["company_name"]), "")
-        results.append({
-            "company_name": item["company_name"],
-            "email": item["email"],
-            "url": item["url"],
-            "prefecture": item["prefecture"],
-            "industry": matched
+            "industry": predicted_industry
         })
 
     return results
