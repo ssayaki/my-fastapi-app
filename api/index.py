@@ -134,7 +134,7 @@ async def handle_batch_request(payload: RequestPayload):
         predictions = dify_result.get("results", [])
         logging.info(f"[DIFY RAW RESPONSE]: {dify_result}")
     except Exception as e:
-        logging.error("[DIFY ERROR] 呼び出しに失敗: %s", str(e))
+        logging.error(f"[DIFY ERROR] 呼び出しに失敗: {str(e)}")
         predictions = []
 
 
