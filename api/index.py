@@ -14,7 +14,8 @@ logging.basicConfig(level=logging.INFO)
 app = FastAPI()
 
 # Dify Workflow API設定
-DIFY_API_URL = "https://api.dify.ai/v1/workflows/YOUR_WORKFLOW_ID/execute"
+DIFY_WORKFLOW_ID = os.getenv("DIFY_WORKFLOW_ID")
+DIFY_API_URL = f"https://api.dify.ai/v1/workflows/{DIFY_WORKFLOW_ID}/run"
 DIFY_API_KEY = os.getenv("DIFY_API_KEY")
 
 # SerpApi APIキー
