@@ -74,7 +74,7 @@ async def handle_batch_request(payload: RequestPayload):
         # Step 2: ホームページから都道府県を取得
         prefecture = ""
         try:
-            res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+            res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
             soup = BeautifulSoup(res.text, "html.parser") # これを出力してaddress取得できないか確認。
             text = soup.get_text()
             match = re.search(r"(東京都|北海道|(?:京都|大阪)府|.{2,3}県)", text)
