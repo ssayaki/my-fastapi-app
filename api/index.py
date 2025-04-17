@@ -106,11 +106,7 @@ async def handle_batch_request(payload: RequestPayload):
     # Step 3: Difyへ一括送信
     dify_payload = {
         "inputs": {
-            "industry_texts": payload.industry_texts,
-            "info_list": [
-                {"company_name": item["company_name"], "info": item["info"]}
-                for item in enriched_items
-            ]
+            "industry_texts": payload.industry_texts
         },
         "response_mode": "blocking",
         "user": "company-fetcher"
