@@ -15,7 +15,7 @@ app = FastAPI()
 
 # Dify Workflow API設定
 DIFY_WORKFLOW_ID = os.getenv("DIFY_WORKFLOW_ID")
-DIFY_API_URL = f"https://api.dify.ai/v1/workflows/run/{DIFY_WORKFLOW_ID}"
+DIFY_API_URL = "https://api.dify.ai/v1/workflows/run"
 DIFY_API_KEY = os.getenv("DIFY_API_KEY")
 
 # SerpApi APIキー
@@ -106,11 +106,7 @@ async def handle_batch_request(payload: RequestPayload):
     # Step 3: Difyへ一括送信
     dify_payload = {
         "inputs": {
-            "industry_texts": payload.industry_texts,
-            "info_list": [
-                {"company_name": item["company_name"], "info": item["info"]}
-                for item in enriched_items
-            ]
+            "input": "こんにちは。"
         },
         "response_mode": "blocking",
         "user": "company-fetcher"
