@@ -7,6 +7,7 @@ import re
 import os
 import logging
 from fastapi import Response
+import json
 
 # ログの設定
 logging.basicConfig(level=logging.INFO)
@@ -119,23 +120,20 @@ async def handle_batch_request(payload: RequestPayload):
         "Authorization": f"Bearer {DIFY_API_KEY}",
         "Content-Type": "application/json"
     }
-    # Dify API送信前にログを出力
-    logging.info(f"[DIFY DEBUG] Request URL: {DIFY_API_URL}")
-    logging.info(f"[DIFY DEBUG] API_KEY is set: {bool(DIFY_API_KEY)}")
-    logging.info(f"[DIFY DEBUG] Payload: {dify_payload}")
-    logging.info(f"[DIFY DEBUG] Headers: {headers}")
-
 
     try:
         dify_response = requests.post(DIFY_API_URL, headers=headers, json=dify_payload)
         dify_response.raise_for_status()  # ステータスコードが4xx/5xxなら例外にする
         dify_result = dify_response.json()
-        predictions = dify_result.get("results", [])
         logging.info(f"[DIFY RAW RESPONSE]: {dify_result}")
-    except Exception as e:
-        logging.error(f"[DIFY ERROR] 呼び出しに失敗: {str(e)}")
-        predictions = []
-
+        
+        # "results" フィールドが JSON文字列で返ってくることを想定
+        results_str = dify_result.get("results", "[]")
+        try:
+            predictions = json.loads(results_str)
+        except Exception as e:
+            logging.error(f"[DIFY ERROR] 結果のパースに失敗: {e}")
+            predictions = []
 
     # Step 4: 結果を統合
     results = []
