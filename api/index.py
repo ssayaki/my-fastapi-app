@@ -120,19 +120,22 @@ async def handle_batch_request(payload: RequestPayload):
     }
 
     try:
-        dify_response = requests.post(DIFY_API_URL, headers=headers, json=dify_payload)
-        dify_response.raise_for_status()  # HTTPステータスが4xx/5xxの場合、例外が発生します
-        dify_result = dify_response.json()
-        logging.info(f"[DIFY RAW RESPONSE]: {dify_result}")
-        
-        # difyのレスポンス構造：{"outputs": {"results": "結果"}}
-        results_str = dify_result.get("outputs", {}).get("results", "[]")
-        predictions = json.loads(results_str)
-        
-        logging.info(f"[DIFY RAW RESPONSE Parsed]: {predictions}")
-    except Exception as e:
-        logging.error(f"[DIFY ERROR] 呼び出し or 結果のパースに失敗: {e}")
-        predictions = []
+    dify_response = requests.post(DIFY_API_URL, headers=headers, json=dify_payload)
+    dify_response.raise_for_status()
+
+    dify_result = dify_response.json()
+    logging.info(f"[DIFY RAW RESPONSE]: {json.dumps(dify_result, ensure_ascii=False)}")
+
+    # "data" → "outputs" → "results" を取得（文字列として）
+    results_str = dify_result.get("data", {}).get("outputs", {}).get("results", "[]")
+
+    # JSON文字列をリストに変換
+    predictions = json.loads(results_str)
+    logging.info(f"[DIFY PARSED PREDICTIONS]: {predictions}")
+
+except Exception as e:
+    logging.error(f"[DIFY ERROR] 呼び出し or 結果のパースに失敗: {e}")
+    predictions = []
 
     # Step 4: 結果を統合
     results = []
